@@ -1,3 +1,4 @@
+# API-тесты постов и комментариев
 import requests
 import pytest
 @pytest.mark.smoke
