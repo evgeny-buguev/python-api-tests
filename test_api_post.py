@@ -1,4 +1,5 @@
 # API-тесты постов и комментариев
+# Учебное изменение в ветке practice
 import requests
 import pytest
 @pytest.mark.smoke
