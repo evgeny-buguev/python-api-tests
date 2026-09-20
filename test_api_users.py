@@ -53,3 +53,47 @@ def test_check_email_accepts_digits():
 def test_check_email_rejects_invalid_value(email,expected_message):
     with pytest.raises(AssertionError, match=expected_message):
         check_email(email)
+
+@pytest.mark.parametrize("user_id",range(1,10))
+def test_user_name(base_url, user_id):
+    url = f"{base_url}/users/{user_id}"
+    response = requests.get(url, timeout=10)
+    assert response.status_code == 200, f"Ожидали статус кода , пришеk {response.status_code}"
+    data = response.json()
+    assert "name" in data, "Ожидали поле name"
+    assert isinstance (data["name"],str), "Ожидали стрроку"
+    assert data["name"].strip()!="", "имя пустое"
+
+
+def test_user_company_name(base_url):
+    url = f"{base_url}/users/1"
+    response = requests.get(url, timeout = 10)
+    assert response.status_code == 200, f"Ожидали статус 200, пришел {response.status_code}"
+    data = response.json()
+    assert "company" in data, " Ожидали поле company"
+    assert isinstance(data["company"], dict), "Ожидали словарь"
+    assert "name" in data["company"], "нет названия компании"
+    assert isinstance (data["company"]["name"],str), "ожидали строку"
+    assert data["company"]["name"].strip() !="", "Название компании пустое"
+
+@pytest.mark.parametrize("user_id", range(1,11))
+def test_user_coordinates(base_url, user_id):
+    url = f"{base_url}/users/{user_id}"
+    response = requests.get(url, timeout=10)
+    assert response.status_code == 200, f"Ожидали статус код 200, пришел {response.status_code}"
+    data = response.json()
+    assert "address" in data, "Ожидали поле адрес"
+    assert "geo" in data["address"], "Ожидаои поле geo"
+    assert "lat" in data ["address"]["geo"], "Ожидали lat и lng"
+    assert "lng" in data ["address"]["geo"], "Ожидали lat и lng"
+    assert isinstance (data["address"]["geo"]["lat"],str), "Ожидали строку"
+    assert isinstance (data["address"]["geo"]["lng"],str), "Ожидали строку"
+    assert data["address"]["geo"]["lat"].strip() !="", "Название  lat пустое"
+    assert data["address"]["geo"]["lng"].strip() !="", "Название lng  пустое"
+    latituda = float(data["address"]["geo"]["lat"])
+    assert latituda >= -90 and latituda <= 90
+    longitude = float(data["address"]["geo"]["lng"])
+    assert longitude >= -180 and longitude <= 180
+
+
+    

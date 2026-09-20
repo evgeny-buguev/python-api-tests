@@ -131,3 +131,11 @@ def test_get_comments_for_missing_post(base_url):
     assert response.status_code == 200, "Ожидали статус 200"
     comments = response.json()
     assert comments == [],"Ожидали отсувие коментариев"
+
+def test_status_example():
+    actual_status = 201
+    expected_status = 201
+
+    assert actual_status == expected_status, (
+        f"Ожидали {expected_status}, получили {actual_status}"
+    )
