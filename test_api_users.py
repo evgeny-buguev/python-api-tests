@@ -96,4 +96,32 @@ def test_user_coordinates(base_url, user_id):
     assert longitude >= -180 and longitude <= 180
 
 
-    
+def check_coordinate(value, minimum, maximum, lebel):
+    coordinate= float(value)
+    assert coordinate >= minimum and coordinate <= maximum,f"{lebel} вне диапозона"
+@pytest.mark.parametrize("value",["-90", "0", "90", "55.75"])
+def test_check_latitude_accepts_valid(value):
+    check_coordinate(value, -90, 90,"Широта")
+@pytest.mark.parametrize("value",["-180","0","180","120.5"])
+def test_check_longtitude_accepts_valid(value):
+    check_coordinate(value, -180, 180,"Долгота")
+@pytest.mark.parametrize("value",["-91", "91"] )
+def test_check_latitude_rejects_invalid(value):
+    with pytest.raises(AssertionError, match="Широта вне диапозона"):
+        check_coordinate(value,-90, 90, "Широта")
+@pytest.mark.parametrize("value",["-181", "181"] )
+def test_check_longitude_rejects_invalid(value):
+    with pytest.raises(AssertionError, match="Долгота вне диапозона"):
+        check_coordinate(value,-180, 180, "Долгота")
+@pytest.mark.parametrize("value",["abc", "", "55,75"] )
+def test_check_coordinate_rejects_non_numeric(value):
+    with pytest.raises(ValueError):
+        check_coordinate (value,-90, 90, "Широта")
+
+@pytest.mark.parametrize("value",["abc", "", "55,75"] )
+def test_check_coordinate_rejects_non_numeric_dolgota(value):
+    with pytest.raises(ValueError):
+       check_coordinate(value,-180, 180, "Долгота")
+
+
+
