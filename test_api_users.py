@@ -1,3 +1,4 @@
+from api_client import get_user
 import requests
 import pytest
 def check_email(email):
@@ -122,6 +123,55 @@ def test_check_coordinate_rejects_non_numeric(value):
 def test_check_coordinate_rejects_non_numeric_dolgota(value):
     with pytest.raises(ValueError):
        check_coordinate(value,-180, 180, "Долгота")
+@pytest.mark.parametrize("user_id", range(1, 11))
+def test_users_content_type(base_url, user_id):
+    url = f"{base_url}/users/{user_id}"
+    response = requests.get(url, timeout=10)
+    assert response.status_code == 200, f"Ожидали 200 а пришло{response.status_code}"
+    assert "application/json" in response.headers["Content-Type"],"ожидали это самое"
+    data = response.json()
+    assert data["id"] == user_id, f"Ожидали id {user_id}, получили {data['id']}"
+    print(data)
+    
 
 
 
+def test_get_user_server_error(monkeypatch, base_url):
+    fake_response = requests.Response()
+    fake_response.status_code = 500
+    def fake_get(url, timeout):
+        return fake_response
+    monkeypatch.setattr(requests,"get",fake_get)
+    with pytest.raises(requests.exceptions.HTTPError):
+        get_user(base_url,1)
+
+def test_get_user_success(monkeypatch, base_url):
+    # Создаём объект ответа и задаём успешный статус
+    fake_response = requests.Response()
+    fake_response.status_code = 200
+
+    # Записываем в тело ответа данные выдуманного пользователя
+    fake_response._content = b'{"id": 1, "name": "Ivan"}'
+
+    # Эта функция отдаст наш ответ вместо запроса в интернет
+    def fake_get(url, timeout):
+        return fake_response
+
+    # Временно заменяем requests.get нашей функцией fake_get
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    # Вызываем проверяемую функцию и получаем её результат
+    data = get_user(base_url, 1)
+
+    # Проверяем возвращённые данные
+    assert data["id"] == 1, "Ожидали id 1"
+    assert data["name"] == "Ivan", "Ожидали имя Ivan"
+
+def test_get_user_timeout(monkeypatch, base_url):
+    def fake_get(url, timeout):
+        raise requests.exceptions.Timeout("Сервер не ответил")
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    with pytest.raises(requests.exceptions.Timeout):
+        get_user(base_url, 1)
