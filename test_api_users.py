@@ -149,14 +149,15 @@ def test_get_user_success(monkeypatch, base_url):
     # Создаём объект ответа и задаём успешный статус
     fake_response = requests.Response()
     fake_response.status_code = 200
-
+    
     # Записываем в тело ответа данные выдуманного пользователя
     fake_response._content = b'{"id": 1, "name": "Ivan"}'
 
     # Эта функция отдаст наш ответ вместо запроса в интернет
     def fake_get(url, timeout):
+        assert url == f"{base_url}/users/1", "Запрос ушёл не на тот адрес"
+        assert timeout == 10, "Ожидали timeout=10"
         return fake_response
-
     # Временно заменяем requests.get нашей функцией fake_get
     monkeypatch.setattr(requests, "get", fake_get)
 
@@ -175,3 +176,68 @@ def test_get_user_timeout(monkeypatch, base_url):
 
     with pytest.raises(requests.exceptions.Timeout):
         get_user(base_url, 1)
+
+
+def test_get_user_real_api(base_url):
+    data = get_user(base_url, 1)
+
+    assert data["id"] == 1, "Ожидали пользователя 1"
+    assert isinstance(data["name"], str), "Ожидали имя строкой"
+    assert data["name"].strip() != "", "Имя пустое"
+
+@pytest.mark.parametrize("status_code", [401, 404, 500])
+def test_get_user_http_errors(monkeypatch, base_url, status_code):
+    fake_response = requests.Response()
+    fake_response.status_code = status_code
+
+    # Возвращаем подготовленный ответ без обращения к серверу
+    def fake_get(url, timeout):
+        return fake_response
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    # get_user должна вызвать HTTPError для каждого из этих статусов
+    with pytest.raises(requests.exceptions.HTTPError):
+        get_user(base_url, 1)
+
+import requests
+def test_auth_with_token(auth_token):
+    response = requests.get(
+    "https://dummyjson.com/auth/me",
+    headers={"Authorization": f"Bearer {auth_token}"},
+    timeout=10,
+    )
+    assert response.status_code == 200
+    assert response.json()["username"] == "emilys"
+
+def test_auth_without_token():
+    response = requests.get(
+        "https://dummyjson.com/auth/me",
+        timeout=10,
+    )
+    assert response.status_code == 401, f"Ожидали 401 а приешд{response.status_code}"
+
+def test_auth_invalid_token():
+    response = requests.get(
+        "https://dummyjson.com/auth/me",
+        headers={"Authorization": "Bearer wrong-token"},
+        timeout=10,
+    )
+    assert response.status_code == 401, f"Ожидали 401 а приешд{response.status_code}"
+def test_auth_wrong_password():
+    response = requests.post(
+        "https://dummyjson.com/auth/login",
+        json={"username": "emilys", "password": "wrong-password"},
+        timeout=10,
+    )
+    data = response.json()
+    assert response.status_code == 400, (
+        f"Ожидали 400, получили {response.status_code}"
+    )
+
+    # Проверяем, что в словаре ответа отсутствует ключ accessToken:
+    # при неправильном пароле сервер не должен выдавать токен
+    assert "accessToken" not in data, (
+        "Сервер выдал токен при неверном пароле"
+    )
+    
