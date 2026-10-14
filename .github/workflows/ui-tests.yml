@@ -1,0 +1,26 @@
+name: UI tests
+
+# Запуск после отправки кода в master.
+on:
+  push:
+    branches: [master]
+
+jobs:
+  ui-tests:
+    # Тесты выполняются на компьютере GitHub.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Получить код проекта
+        uses: actions/checkout@v7
+
+      - name: Подготовить Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Установить всё и запустить тесты
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+          python -m pytest ui_tests -v
