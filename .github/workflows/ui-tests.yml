@@ -24,3 +24,10 @@ jobs:
           pip install -r requirements.txt
           playwright install --with-deps chromium
           python -m pytest ui_tests -v
+          
+      - name: Сохранить отчёт тестов
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-test-report
+          path: report.xml
