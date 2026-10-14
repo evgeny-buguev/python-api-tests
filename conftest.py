@@ -1,9 +1,10 @@
 import requests
 import pytest
 import sqlite3
-@pytest.fixture
+@pytest.fixture(scope="session")
 def base_url():
     return "https://jsonplaceholder.typicode.com"
+
 
 @pytest.fixture
 def payload():
