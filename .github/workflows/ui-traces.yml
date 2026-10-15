@@ -1,0 +1,36 @@
+name: UI traces
+
+# Запускается вручную кнопкой в GitHub.
+on:
+  workflow_dispatch:
+
+jobs:
+  ui-traces:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Получаем файлы проекта.
+      - name: Получить код
+        uses: actions/checkout@v7
+
+      - name: Подготовить Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Установить библиотеки и браузер
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      # Записываем действия браузера.
+      - name: Запустить тесты с записью
+        run: python -m pytest ui_tests -v --tracing on
+
+      # Сохраняем созданные записи для скачивания.
+      - name: Сохранить записи
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-traces
+          path: test-results/**/trace.zip
