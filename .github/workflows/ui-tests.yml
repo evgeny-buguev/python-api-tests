@@ -31,3 +31,9 @@ jobs:
         with:
           name: ui-test-report
           path: report.xml
+      - name: Сохранить скриншоты
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-screenshots
+          path: test-results/screenshots/
