@@ -34,3 +34,19 @@ def page_with_screenshot(opened_page):
     folder.mkdir(parents=True, exist_ok=True)
 
     opened_page.screenshot(path=str(folder/"after_test.png"))
+
+@pytest.fixture(scope = "session")
+def login_data_for_tests(browser):
+    prepation_context = browser.new_context()
+    login_response = prepation_context.request.post(
+         "https://practice.expandtesting.com/authenticate",
+        form={
+            "username": "practice",
+            "password": "SuperSecretPassword!"
+        },
+        max_redirects = 0
+    )
+    assert login_response.status == 302
+    copied_data = prepation_context.storage_state()
+    prepation_context.close()
+    return copied_data
