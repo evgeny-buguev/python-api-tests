@@ -50,3 +50,13 @@ def login_data_for_tests(browser):
     copied_data = prepation_context.storage_state()
     prepation_context.close()
     return copied_data
+
+@pytest.fixture
+def temporary_note(tmp_path):
+    note_file = tmp_path / "note.txt"
+    note_file.write_text("Soup", encoding= "utf-8")
+    print("1. Файл создан")
+    yield note_file
+
+    note_file.unlink()
+    print("3. Файл удален:", not note_file.exists())
