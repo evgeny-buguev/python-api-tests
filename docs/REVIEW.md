@@ -21,11 +21,26 @@
 ## Проверка изменений
 
 - Полный сбор: **149 кейсов**, ошибок коллекции нет.
-- Unit + SQLite: **38 passed** на Python 3.12.
+- Unit + SQLite: **38 passed** локально на Python 3.12; в CI — на Python 3.12 и 3.14.
 - Ruff: **check и format --check прошли** для 59 Python-файлов.
 - YAML workflows и относительные ссылки в документации проверены.
-- Локальная установка Chromium и Headless Shell не завершилась: оба скачанных архива оказались повреждёнными. Браузерные наборы проверяются отдельно через GitHub Actions.
-- Внешние API: выполняется проверка; итоговый результат фиксируется в PR и CI.
+- Внешние API: **70 passed** локально и в CI.
+- Chromium: **6 локальных UI + 35 внешних UI passed** в CI.
+- JUnit-отчёты и UI-артефакты опубликованы в GitHub Actions.
+
+Проверки кода commit [a6af11a](https://github.com/evgeny-buguev/python-api-tests/commit/a6af11a03cac3be9babce59ed0a328a0a84afeb3):
+
+| CI-запуск | Набор | Результат |
+| --- | --- | --- |
+| [API and local tests](https://github.com/evgeny-buguev/python-api-tests/actions/runs/41232617946) | Unit + SQLite, Python 3.12 | 38 passed; Ruff check/format passed |
+| Тот же запуск | Unit + SQLite, Python 3.14 | 38 passed; Ruff check/format passed |
+| Тот же запуск | Внешние API | 70 passed |
+| [UI tests](https://github.com/evgeny-buguev/python-api-tests/actions/runs/41232617823) | Chromium без внешних сервисов | 6 passed, 35 deselected |
+| Тот же запуск | Chromium с внешними сервисами | 35 passed, 6 deselected |
+
+Таким образом, все 149 кейсов прошли в отдельных CI jobs; локальный набор дополнительно проверен на двух версиях Python.
+Каждый UI job вывел одно предупреждение PytestRemovedIn10Warning о фикстуре base_url; ошибок выполнения нет.
+Локальная установка Chromium и Headless Shell не завершилась из-за повреждённых скачанных архивов, поэтому браузерный результат подтверждён CI.
 
 Количество кейсов не является процентом покрытия продукта. Последние исходные CI-запуски до изменений:
 [API](https://github.com/evgeny-buguev/python-api-tests/actions/runs/40825782957) и
