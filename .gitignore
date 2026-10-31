@@ -2,3 +2,9 @@
 __pycache__/
 .pytest_cache/
 report.xml
+test-results/
+.ruff_cache/
+*.py[cod]
+.env
+playwright/.auth/
+auth-state*.json

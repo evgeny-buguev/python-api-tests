@@ -1,24 +1,61 @@
-name: API tests
+name: API and local tests
 
 on:
   push:
     branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  api-tests:
+  local:
+    name: Unit, SQLite, and lint (Python ${{ matrix.python }})
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.12", "3.14"]
     steps:
-      - name: Получить код проекта
-        uses: actions/checkout@v7
-
-      - name: Подготовить Python
-        uses: actions/setup-python@v7
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.14"
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m ruff check .
+      - run: python -m ruff format --check .
+      - run: python -m pytest tests/unit tests/db -q --junitxml=test-results/junit-local.xml
+      - name: Upload local test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: local-tests-py${{ matrix.python }}
+          path: test-results/
+          retention-days: 7
 
-      - name: Установить библиотеки
-        run: python -m pip install -r requirements.txt
-
-      - name: Запустить тесты
-        run: python -m pytest test_api_post.py test_api_users.py test_db.py -v
+  api:
+    name: External demo APIs
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pytest tests/api -q --junitxml=test-results/junit-api.xml
+      - name: Upload API test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: api-tests
+          path: test-results/
+          retention-days: 7
