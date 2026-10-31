@@ -1,13 +1,14 @@
+import pytest
+
+pytestmark = [pytest.mark.ui]
+
+
 def send_server_error(route):
-    route.fulfill(
-        status = 500,
-        json = {"message": "Server error"}
-    )
+    route.fulfill(status=500, json={"message": "Server error"})
+
 
 def test_mock_server(page):
-    user_url =(
-        "https://jsonplaceholder.typicode.com/users/2"
-    )
+    user_url = "https://jsonplaceholder.typicode.com/users/2"
     page.route(user_url, send_server_error)
     server_response = page.goto(user_url)
     error_data = server_response.json()

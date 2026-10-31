@@ -1,4 +1,7 @@
+import pytest
 from playwright.sync_api import expect
+
+pytestmark = [pytest.mark.ui, pytest.mark.external]
 
 
 def test_initial_food_is_pizza(opened_page):

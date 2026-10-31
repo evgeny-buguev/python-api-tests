@@ -1,4 +1,8 @@
+import pytest
 from playwright.sync_api import expect
+
+pytestmark = [pytest.mark.ui, pytest.mark.external]
+
 
 def test_api_login(page):
     login_response = page.request.post(
@@ -6,16 +10,12 @@ def test_api_login(page):
         form={
             "username": "practice",
             "password": "SuperSecretPassword!",
-            },
-            max_redirects = 0
-            
+        },
+        max_redirects=0,
     )
     assert login_response.status == 302
-     # Открываем защищённую страницу в браузере.
+    # Открываем защищённую страницу в браузере.
     page.goto(
-        "https://practice.expandtesting.com/secure",
-        wait_until="domcontentloaded"
+        "https://practice.expandtesting.com/secure", wait_until="domcontentloaded"
     )
-    expect(
-        page.get_by_text("Hi, practice!", exact=True)
-    ).to_be_visible()
+    expect(page.get_by_text("Hi, practice!", exact=True)).to_be_visible()
