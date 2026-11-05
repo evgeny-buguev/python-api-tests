@@ -60,3 +60,26 @@ def temporary_note(tmp_path):
 
     note_file.unlink()
     print("3. Файл удален:", not note_file.exists())
+
+@pytest.fixture
+def context_with_cleanup(browser):
+    created_context = browser.new_context()
+    try:
+        
+        yield created_context
+    finally:
+            created_context.close()
+            print("Фикустура закрыла контескт")
+
+@pytest.fixture
+def context_with_setup_error(browser):
+    prepared_context = browser.new_context()
+    try:
+        prepared_context.new_page()
+        print("1. Вкладка создана")
+        assert False, "Учебная ошибка подготвки"
+        yield prepared_context
+    finally:
+        prepared_context.close()
+        print("2. Контекст закрыт после ошибки подготовки")
+
