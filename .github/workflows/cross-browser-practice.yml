@@ -1,0 +1,47 @@
+name: Cross-browser practice
+
+# Разрешаем запуск кнопкой Run workflow на GitHub.
+on:
+  workflow_dispatch:
+
+jobs:
+  # browser-check — выбранное нами имя задания.
+  browser-check:
+    # GitHub предоставит компьютер с Linux Ubuntu.
+    runs-on: ubuntu-latest
+
+    steps:
+      # Получаем файлы нашего репозитория.
+      - name: Получить код проекта
+        uses: actions/checkout@v7
+
+      # Устанавливаем Python на компьютере GitHub.
+      - name: Подготовить Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      # Устанавливаем библиотеки, включая pytest-xdist.
+      - name: Установить зависимости
+        run: python -m pip install -r requirements.txt
+
+      # Устанавливаем браузеры и системные библиотеки.
+      - name: Установить браузеры
+        run: python -m playwright install --with-deps chromium firefox
+
+      # Знак > объединяет строки ниже в одну команду.
+      - name: Запустить тест в двух браузерах
+        run: >
+          python -m pytest
+          ui_tests/test_46_close_new_tab.py
+          --browser chromium
+          --browser firefox
+          -n 2
+
+      # Сохраняем отчёт даже при падении теста.
+      - name: Сохранить отчёт
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cross-browser-report
+          path: report.xml
