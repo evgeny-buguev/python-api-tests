@@ -1,5 +1,6 @@
 import pytest
 from pathlib import Path
+from filelock import FileLock
 
 
 # Помечаем функцию как фикстуру — подготовку для тестов.
@@ -83,3 +84,112 @@ def context_with_setup_error(browser):
         prepared_context.close()
         print("2. Контекст закрыт после ошибки подготовки")
 
+# Подготовка выполняется один раз за сессию.
+@pytest.fixture(scope="session")
+def session_data_fixture(worker_id):
+    # Показываем, какой процесс выполняет подготовку.
+    print("СОЗДАНИЕ ДАННЫХ:", worker_id)
+
+    # Эти данные получат тесты.
+    return "Soup"
+
+@pytest.fixture(scope="session")
+def worker_username_fixture(worker_id):
+    # Соединяем начало логина с именем воркера.
+    username_text = "student_" + worker_id
+
+    # Показываем получившийся логин.
+    print("ЛОГИН ДЛЯ ТЕСТОВ:", username_text)
+
+    # Передаём строку тесту, запросившему фикстуру.
+    return username_text
+@pytest.fixture
+def worker_screenshot_fixture(opened_page, worker_id):
+    yield opened_page
+    screenshot_folder = Path("test-results")/ "screenshots"
+    screenshot_folder.mkdir(parents = True, exist_ok= True)
+    image_filename = "after_"+ worker_id + ".png"
+    image_path = screenshot_folder / image_filename
+    opened_page.screenshot(path = image_path)
+    print("СКРИНШОТ:", image_path)
+
+@pytest.fixture
+def named_screenshot_fixture(
+    opened_page, worker_id, request
+):
+    yield opened_page
+    
+    screenshots_folder = (
+        Path("test-results") / "screenshots"
+    )
+    screenshots_folder.mkdir(
+        parents = True,
+        exist_ok = True,
+    )
+    test_name = request.node.name
+    image_filename = (
+        "after_" + worker_id
+        + "_" + test_name + ".png"
+    )
+    image_path = (
+        screenshots_folder / image_filename
+    )
+
+    opened_page.screenshot(path = image_path)
+    print ("СКРИНШОТ:", image_path)
+
+@pytest.fixture
+def run_screenshot_fixture(
+    opened_page, worker_id, request, testrun_uid,
+):
+    yield opened_page
+
+    screenshots_folder = (
+        Path("Screnshot-history")
+        / testrun_uid
+    )
+    screenshots_folder.mkdir(
+        parents = True,
+        exist_ok= True,
+    )
+    test_name = request.node.name
+    image_filename = (
+        "after_" + worker_id + "-" + test_name +".png"   
+    )
+    image_path = (
+        screenshots_folder / image_filename
+    )
+    opened_page.screenshot(path = image_path)
+    print("СКРИНШОТ:", image_path)
+
+@pytest.fixture(scope = "session")
+def shared_data_fixture(
+    worker_id,
+    testrun_uid,
+):
+    data_folder_path = Path(
+        "shared_test_data"
+    ) / testrun_uid
+
+    data_folder_path.mkdir(
+        parents = True,
+        exist_ok = True,
+    )
+    data_file_path = (
+        data_folder_path / "shared_data.txt"
+    )
+    lock_file_path = (
+        data_folder_path / "shared_data.lock"
+    )
+    with FileLock(str(lock_file_path)):
+        if not data_file_path.exists():
+            data_file_path.write_text(
+                "Soup",
+                encoding = "utf-8",
+            )
+            print ("СОЗДАН ФАЙЛ:", worker_id)
+        shared_text = data_file_path.read_text(
+            encoding = "utf-8",
+        )
+        print("ПРОЧИТАЛ ФАЙЛ", worker_id)
+        return shared_text
