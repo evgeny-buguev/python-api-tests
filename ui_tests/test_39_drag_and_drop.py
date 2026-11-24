@@ -12,7 +12,13 @@ def test_drag_and_drop(page):
     second_box = page.locator("#column-b")
     expect(first_box).to_have_text("A")
     expect(second_box).to_have_text("B")
-    # Send intermediate pointer moves before dropping on the target.
-    first_box.drag_to(second_box, steps=8)
+    first_box.hover()
+    page.mouse.down()
+    try:
+        # Repeat the move over the target to deliver dragover before releasing.
+        second_box.hover()
+        second_box.hover()
+    finally:
+        page.mouse.up()
     expect(first_box).to_have_text("B")
     expect(second_box).to_have_text("A")
