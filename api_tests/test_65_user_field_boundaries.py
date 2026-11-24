@@ -1,5 +1,9 @@
+import logging
+
 import pytest
 from jsonschema import Draft202012Validator
+
+logger = logging.getLogger(__name__)
 
 expected_list_schema = {
     "type": "array",
@@ -19,6 +23,8 @@ expected_list_schema = {
         "required": ["id", "name"],
     },
 }
+
+
 @pytest.mark.parametrize(
     "user_id, user_name, expected_error_count",
     [
@@ -28,23 +34,17 @@ expected_list_schema = {
         (0, "", 2),
     ],
 )
-
 def test_user_field_boundaries(
     user_id,
     user_name,
     expected_error_count,
 ):
-    users_to_check =[
-        {
-            "id": user_id,
-            "name": user_name
-        }
-    ]
+    users_to_check = [{"id": user_id, "name": user_name}]
     schema_validator = Draft202012Validator(expected_list_schema)
     found_errors = list(schema_validator.iter_errors(users_to_check))
 
     for validator_error in found_errors:
         error_lolacation = list(validator_error.path)
-        print("WHERE:", error_lolacation)
-        print("MISSTAKE:", validator_error.message)
+        logger.info("%s %s", "WHERE:", error_lolacation)
+        logger.info("%s %s", "MISSTAKE:", validator_error.message)
     assert len(found_errors) == (expected_error_count)

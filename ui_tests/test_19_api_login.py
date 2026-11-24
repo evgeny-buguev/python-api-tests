@@ -1,21 +1,11 @@
 from playwright.sync_api import expect
 
-def test_api_login(page):
-    login_response = page.request.post(
-        "https://practice.expandtesting.com/authenticate",
-        form={
-            "username": "practice",
-            "password": "SuperSecretPassword!",
-            },
-            max_redirects = 0
-            
-    )
-    assert login_response.status == 302
-     # Открываем защищённую страницу в браузере.
-    page.goto(
-        "https://practice.expandtesting.com/secure",
-        wait_until="domcontentloaded"
-    )
+from settings import EXPANDTESTING_USERNAME
+from ui_tests.pages.base_page import BasePage
+
+
+def test_api_login(api_logged_in_page):
+    BasePage(api_logged_in_page).open("/secure")
     expect(
-        page.get_by_text("Hi, practice!", exact=True)
+        api_logged_in_page.get_by_text(f"Hi, {EXPANDTESTING_USERNAME}!", exact=True)
     ).to_be_visible()

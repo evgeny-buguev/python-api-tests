@@ -1,4 +1,3 @@
-import requests
 from jsonschema import validate
 
 expected_user_schema = {
@@ -6,12 +5,10 @@ expected_user_schema = {
     "properties": {
         "id": {"type": "integer"},
         "name": {"type": "string"},
-
         # Правила для поля address.
         "address": {
             # Значение address должно быть словарём.
             "type": "object",
-
             # Правила для полей ВНУТРИ address.
             "properties": {
                 "city": {"type": "string"},
@@ -20,14 +17,15 @@ expected_user_schema = {
         },
     },
 }
-def test_api_user_matches_nested_schema():
-    received_response = requests. get(
-        "https://jsonplaceholder.typicode.com/users/1",
-        timeout=10,
+
+
+def test_api_user_matches_nested_schema(api_client):
+    received_response = api_client.get(
+        "/users/1",
     )
-    assert received_response.status_code == 200 
+    assert received_response.status_code == 200
     received_user_data = received_response.json()
     validate(
         instance=received_user_data,
-        schema= expected_user_schema,
+        schema=expected_user_schema,
     )

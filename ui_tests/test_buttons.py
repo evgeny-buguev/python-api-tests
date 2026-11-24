@@ -5,9 +5,7 @@ from playwright.sync_api import expect
 # и передать нам открытую страницу.
 def test_edit_button_exists(opened_page):
     # Находим кнопку Edit.
-    edit_button = opened_page.get_by_role(
-        "button", name="Edit", exact=True
-    )
+    edit_button = opened_page.get_by_role("button", name="Edit", exact=True)
 
     # Проверяем, что кнопка видна.
     expect(edit_button).to_be_visible()

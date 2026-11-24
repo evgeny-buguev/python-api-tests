@@ -1,8 +1,14 @@
+import logging
+
 import pytest
+
+logger = logging.getLogger(__name__)
+
+
 @pytest.mark.xfail(
     raises=AssertionError,
-    strict= True,
+    strict=True,
     reason="Проверяем закрытие при ошибке подготовки",
 )
 def test_setup_error(context_with_setup_error):
-    print("ТЕСТ НАЧАЛСЯ")
+    logger.info("ТЕСТ НАЧАЛСЯ")
