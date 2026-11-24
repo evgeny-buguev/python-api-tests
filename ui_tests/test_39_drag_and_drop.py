@@ -1,7 +1,11 @@
 from playwright.sync_api import expect
+
+from settings import EXPANDTESTING_BASE_URL
+
+
 def test_drag_and_drop(page):
     page.goto(
-        "https://practice.expandtesting.com/drag-and-drop",
+        f"{EXPANDTESTING_BASE_URL}/drag-and-drop",
         wait_until="domcontentloaded",
     )
     first_box = page.locator("#column-a")
@@ -11,4 +15,3 @@ def test_drag_and_drop(page):
     first_box.drag_to(second_box)
     expect(first_box).to_have_text("B")
     expect(second_box).to_have_text("A")
-

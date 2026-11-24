@@ -1,0 +1,35 @@
+name: Publish test reports
+description: Render Allure and archive the available test results
+inputs:
+  name:
+    description: Name of the uploaded artifact
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Generate Allure report
+      if: ${{ hashFiles('allure-results/*-result.json') != '' }}
+      shell: bash
+      env:
+        ALLURE_VERSION: "2.46.1"
+        ALLURE_SHA256: "37428164f310c8d137cfdd2c3a25d049b233261ddab13e1bd4dfd7627b5cbf8d"
+      run: |
+        archive=$(mktemp)
+        trap 'rm -f "$archive"' EXIT
+        curl --fail --silent --show-error --location --retry 3 \
+          "https://github.com/allure-framework/allure2/releases/download/$ALLURE_VERSION/allure-$ALLURE_VERSION.tgz" \
+          --output "$archive"
+        printf '%s  %s\n' "$ALLURE_SHA256" "$archive" | sha256sum --check
+        tar -xzf "$archive" -C "$RUNNER_TEMP"
+        "$RUNNER_TEMP/allure-$ALLURE_VERSION/bin/allure" generate allure-results --clean -o allure-report
+    - name: Upload reports and browser artifacts
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.name }}
+        path: |
+          report.xml
+          allure-results/
+          allure-report/
+          test-results/
+        if-no-files-found: warn

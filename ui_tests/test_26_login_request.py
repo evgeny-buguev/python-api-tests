@@ -1,33 +1,16 @@
+from urllib.parse import parse_qs
+
 from playwright.sync_api import expect
 
-def test_login_reqests(page):
-    page.goto(
-        "https://practice.expandtesting.com/login",
-        wait_until="domcontentloaded"
-    )
-    page.get_by_label(
-        "Username", exact=True
-    ).fill("practice")
-    page.get_by_label(
-        "Password", exact = True
-    ).fill("SuperSecretPassword!")
-    with page.expect_response(
-        "https://practice.expandtesting.com/authenticate"
-    )as waiting_for_login:
-        page.get_by_role(
-            "button",
-            name = "Login",
-            exact = True
-        ).click()
-    received_response = waiting_for_login.value
-    sent_request = received_response.request
-    assert sent_request.method == "POST"
-    assert "username=practice" in sent_request.post_data
-    expect(
-        page.get_by_text(
-        "Hi, practice!",
-        exact=True
-        )
-    ).to_be_visible()
+from settings import EXPANDTESTING_PASSWORD, EXPANDTESTING_USERNAME
+from ui_tests.pages.login_page import LoginPage
 
 
+def test_login_request(page):
+    login = LoginPage(page)
+    login.open()
+    response = login.submit_and_wait_auth(EXPANDTESTING_USERNAME, EXPANDTESTING_PASSWORD)
+
+    assert response.request.method == "POST"
+    assert parse_qs(response.request.post_data or "").get("username") == [EXPANDTESTING_USERNAME]
+    expect(login.greeting).to_be_visible()

@@ -1,4 +1,13 @@
-.venv/
+/.venv/
+/.env
 __pycache__/
 .pytest_cache/
-report.xml
+.ruff_cache/
+/report.xml
+/allure-results*/
+/allure-report*/
+/test-results/
+/shared_test_data/
+/Screnshot-history/
+/after_test.png
+/site-auth.json

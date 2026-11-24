@@ -1,141 +1,124 @@
-# API-тесты постов и комментариев
-# Учебное изменение в ветке practice
-import requests
 import pytest
-@pytest.mark.smoke
-def test_create_post(base_url,payload):
-    url = f"{base_url}/posts"
-    response = requests.post(url,json=payload, timeout=10)
-    assert response.status_code == 201, f"Expected status code 201 but got {response.status_code}"
-    data = response.json()
-    assert data["title"] == payload["title"]
-    assert data["body"] == payload["body"]
-    assert data["userId"] == payload["userId"]
-    assert "id" in data, "Response JSON does not contain 'id' field"
 
-    
+from api_tests.models import Post
+
+
+@pytest.mark.smoke
+def test_create_post(api_client, payload):
+    response = api_client.post("/posts", json=payload)
+
+    assert response.status_code == 201, response.text
+    post = Post.model_validate(response.json())
+    assert post.title == payload["title"]
+    assert post.body == payload["body"]
+    assert post.userId == payload["userId"]
+
+
 @pytest.mark.parametrize("post_id", [1, 2, 3])
-def test_get_existing_posts(post_id, base_url):
-    url = f"{base_url}/posts/{post_id}"
-    response = requests.get(url, timeout=10)
-    assert response.status_code == 200, f"Expected status code 200 but got {response.status_code}"
-    data = response.json()
-    assert data["id"] == post_id, f"Expected post ID {post_id} but got {data['id']}"
-    assert "title" in data, "Response JSON does not contain 'title' field"
-    assert "body" in data, "Response JSON does not contain 'body' field"
+def test_get_existing_posts(api_client, post_id):
+    response = api_client.get(f"/posts/{post_id}")
 
-def test_missing_post(base_url):
-    url =  f"{base_url}/posts/9999"  # Assuming post ID 9999 does not exist
-    response = requests.get(url, timeout=10)
-    assert response.status_code == 404, f"Expected status code 404 but got {response.status_code}"
+    assert response.status_code == 200, response.text
+    post = Post.model_validate(response.json())
+    assert post.id == post_id
 
-def test_update_post_title():
-    url = "https://jsonplaceholder.typicode.com/posts/1"
-    payload = {
-        "title": "Обновленный заголовок записи балать"
-    }
-    response = requests.patch(url, json=payload, timeout=10)
-    assert response.status_code == 200, f"Expected status code 200 but балять got {response.status_code}"
-    data = response.json()
-    assert data["title"] == payload["title"]
+
+def test_missing_post(api_client):
+    response = api_client.get("/posts/9999")
+
+    assert response.status_code == 404, response.text
+
+
+def test_update_post_title(api_client):
+    payload = {"title": "Обновлённый заголовок записи"}
+
+    response = api_client.patch("/posts/1", json=payload)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["title"] == payload["title"]
+
+
 @pytest.mark.smoke
-def test_delete_post():
-    url = "https://jsonplaceholder.typicode.com/posts/1"
-    response = requests.delete(url, timeout=10)
-    assert response.status_code == 200, f"Expected status code 200 but got {response.status_code}"
-@pytest.mark.parametrize("user_id",range(1, 4))
-def test_get_posts_by_user(base_url, user_id):
-    url=f"{base_url}/posts"
-    response = requests.get(url,params={"userId":user_id}, timeout=10)
-    assert response.status_code == 200,"Ожидали статус 200"
-    posts = response.json()
-    assert isinstance(posts, list), "Ожидалис список постов"
-    assert posts, "список постов пуст"
+def test_delete_post(api_client):
+    response = api_client.delete("/posts/1")
 
-    for post in posts:
-        assert post["userId"] == user_id, "Вернулся пост друго пользователя"
-def test_get_posts_for_user_without_posts(base_url):
-    url=f"{base_url}/posts"
-    response = requests.get(url, params={"userId":99}, timeout=10)
-    print("Формат ответа:", response.headers["Content-Type"])
-    assert response.status_code ==200, "ожидали статус код 200"
-    assert "application/json" in response.headers["Content-Type"], "Ожидали формат JSON"
+    assert response.status_code == 200, response.text
+
+
+@pytest.mark.parametrize("user_id", range(1, 4))
+def test_get_posts_by_user(api_client, user_id):
+    response = api_client.get("/posts", params={"userId": user_id})
+
+    assert response.status_code == 200, response.text
     posts = response.json()
-    assert posts == [],f"ожидали пустой список, получили: {posts}"
-def test_get_posts_for_all_users(base_url):
-    response = requests.get(f"{base_url}/users", timeout= 10)
-    assert response.status_code == 200, "не удалось получить пользователя"
-    users =response.json()
-    assert isinstance(users,list), "Ожидали список пользоваетлей"
-    assert users, "Список пользвоетелей пуст"
+    assert isinstance(posts, list)
+    assert posts, f"У пользователя {user_id} нет постов"
+    for post in posts:
+        assert post["userId"] == user_id, "В выборке оказался чужой пост"
+
+
+def test_get_posts_for_user_without_posts(api_client):
+    response = api_client.get("/posts", params={"userId": 99})
+
+    assert response.status_code == 200, response.text
+    assert "application/json" in response.headers["Content-Type"]
+    assert response.json() == []
+
+
+def test_get_posts_for_all_users(api_client):
+    response = api_client.get("/users")
+    assert response.status_code == 200, response.text
+    users = response.json()
+    assert isinstance(users, list) and users, "Список пользователей пуст или имеет неверный тип"
+
     for user in users:
         user_id = user["id"]
-        print("Запрашиваем посты пользователя:", user_id)
-        response = requests.get(
-            f"{base_url}/posts",
-            params={"userId": user_id},
-            timeout=10
-        )
-        assert response.status_code == 200, f"ошибка запроса постов пользователя{user_id}"
+        response = api_client.get("/posts", params={"userId": user_id})
+        assert response.status_code == 200, f"Ошибка запроса постов пользователя {user_id}"
         posts = response.json()
-        assert isinstance(posts, list), " Ожидали список постов"
-        assert posts, f"У пользвоваел {user_id} нет постов"
-        print("Получено постов:", len(posts))
+        assert isinstance(posts, list) and posts, f"У пользователя {user_id} нет списка постов"
         for post in posts:
             check_post_title(post)
-            assert post["userId"] == user_id, f"Пришел чужой пост"
-           
-            print("вроде ном")
+            assert post["userId"] == user_id, "В выборке оказался чужой пост"
+
+
 def check_post_title(post):
-    assert "title" in post, "Нет заголовка"
-    assert isinstance(post["title"], str), "Ожидали строку"
-    assert post["title"].strip() != "", "Заголовок пустой"
+    assert "title" in post, "В посте отсутствует заголовок"
+    assert isinstance(post["title"], str), "Заголовок должен быть строкой"
+    assert post["title"].strip(), "Заголовок пустой"
+
 
 def test_check_post_title_accepts_text():
-    post = {"title": "Привет мир"}
-    check_post_title(post)
+    check_post_title({"title": "Тестовая публикация"})
+
+
 def test_check_post_title_rejects_spaces():
-    post = {"title": "   "}
     with pytest.raises(AssertionError, match="Заголовок пустой"):
-        check_post_title(post)
+        check_post_title({"title": "   "})
 
-@pytest.mark.parametrize("post_id", range(1,9))
-def test_get_comments_for_post(base_url, post_id):
-    response = requests.get(f"{base_url}/posts/{post_id}/comments", timeout= 10)
-    assert response.status_code == 200, "Не удалось получить коментарий"
 
+@pytest.mark.parametrize("post_id", range(1, 9))
+def test_get_comments_for_post(api_client, post_id):
+    response = api_client.get(f"/posts/{post_id}/comments")
+
+    assert response.status_code == 200, response.text
     comments = response.json()
-    assert isinstance(comments, list), "Ожидали список коментариев"
-    assert comments, "Список коментариев пуст"
-    print((comments[0]))
-    seen_numbers=[]
+    assert isinstance(comments, list) and comments, "Нет списка комментариев"
+    seen_ids = set()
     for comment in comments:
-        assert comment["postId"] == post_id, (
-            f"Запросили пост {post_id}, а комментарий относится к посту {comment['postId']}"
+        assert comment["postId"] == post_id, "Комментарий относится к другому посту"
+        assert comment["id"] not in seen_ids, "ID комментария повторяется"
+        seen_ids.add(comment["id"])
+        assert isinstance(comment.get("body"), str) and comment["body"].strip(), (
+            "У комментария отсутствует текст"
         )
-        assert comment["id"] not in seen_numbers, "повторился номер коментария"
-        seen_numbers.append(comment["id"]) 
-        
-        assert "body" in comment, "Нет текста коментария"
-        assert isinstance (comment["body"], str),"Текст коментария дложен быть строкой"
-        assert comment["body"].strip()!="", "тело коментария пусто"
-        assert "email" in comment, "Ожидали емайл в коментарии"
-        assert isinstance(comment["email"], str), "Ожидали строке в поле емайл"
-        assert "@" in comment["email"], "нет собаки"
-    print("Всего коментариев",len(comments))
+        assert isinstance(comment.get("email"), str) and "@" in comment["email"], (
+            "У комментария некорректный email"
+        )
 
-def test_get_comments_for_missing_post(base_url):
-    response = requests.get(f"{base_url}/posts/9999/comments", timeout=10)
-    print("Статус:", response.status_code)
-    print("Ответ:", response.text)
-    assert response.status_code == 200, "Ожидали статус 200"
-    comments = response.json()
-    assert comments == [],"Ожидали отсувие коментариев"
 
-def test_status_example():
-    actual_status = 201
-    expected_status = 201
+def test_get_comments_for_missing_post(api_client):
+    response = api_client.get("/posts/9999/comments")
 
-    assert actual_status == expected_status, (
-        f"Ожидали {expected_status}, получили {actual_status}"
-    )
+    assert response.status_code == 200, response.text
+    assert response.json() == []

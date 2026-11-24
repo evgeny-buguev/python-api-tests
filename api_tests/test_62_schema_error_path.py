@@ -1,5 +1,9 @@
+import logging
+
 import pytest
-from jsonschema import validate, ValidationError
+from jsonschema import ValidationError, validate
+
+logger = logging.getLogger(__name__)
 
 expected_list_schema = {
     "type": "array",
@@ -13,6 +17,8 @@ expected_list_schema = {
         "required": ["id", "name"],
     },
 }
+
+
 def test_error_points_to_second_user_id():
     invalid_users_list = [
         {
@@ -26,11 +32,11 @@ def test_error_points_to_second_user_id():
     ]
     with pytest.raises(ValidationError) as captured_error:
         validate(
-            instance= invalid_users_list,
-            schema= expected_list_schema,
+            instance=invalid_users_list,
+            schema=expected_list_schema,
         )
-    validation_error = captured_error. value
+    validation_error = captured_error.value
     error_location = list(validation_error.path)
-    print("ОШИБКА", validation_error.message)
-    print("ГДЕ", error_location)
+    logger.info("%s %s", "ОШИБКА", validation_error.message)
+    logger.info("%s %s", "ГДЕ", error_location)
     assert error_location == [1, "id"]

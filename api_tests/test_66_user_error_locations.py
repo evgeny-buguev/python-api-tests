@@ -1,5 +1,9 @@
+import logging
+
 import pytest
 from jsonschema import Draft202012Validator
+
+logger = logging.getLogger(__name__)
 
 expected_list_schema = {
     "type": "array",
@@ -19,6 +23,8 @@ expected_list_schema = {
         "required": ["id", "name"],
     },
 }
+
+
 @pytest.mark.parametrize(
     "user_id, user_name, expected_error_locations",
     [
@@ -28,10 +34,7 @@ expected_list_schema = {
         (0, "", [[0, "id"], [0, "name"]]),
     ],
 )
-
-def test_user_error_locations(
-    user_id, user_name, expected_error_locations
-):
+def test_user_error_locations(user_id, user_name, expected_error_locations):
     users_to_check = [
         {
             "id": user_id,
@@ -42,8 +45,8 @@ def test_user_error_locations(
     found_errors = list(schema_validator.iter_errors(users_to_check))
     errors_locations = []
     for validation_error in found_errors:
-        errors_location =list(validation_error.path)
+        errors_location = list(validation_error.path)
         errors_locations.append(errors_location)
-        print("ПОЛУЧИЛИ:", errors_locations)
-        print("ОЖИДАЛИ:", expected_error_locations)
+        logger.info("%s %s", "ПОЛУЧИЛИ:", errors_locations)
+        logger.info("%s %s", "ОЖИДАЛИ:", expected_error_locations)
     assert sorted(errors_locations) == sorted(expected_error_locations)

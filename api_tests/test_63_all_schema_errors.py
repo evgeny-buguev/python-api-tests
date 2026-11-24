@@ -1,4 +1,9 @@
+import logging
+
 from jsonschema import Draft202012Validator
+
+logger = logging.getLogger(__name__)
+
 expected_list_schema = {
     "type": "array",
     "minItems": 1,
@@ -11,6 +16,8 @@ expected_list_schema = {
         "required": ["id", "name"],
     },
 }
+
+
 def test_all_user_errors_are_found():
     invalid_users_list = [
         {
@@ -29,8 +36,8 @@ def test_all_user_errors_are_found():
         error_location = list(validations_error.path)
         error_locations.append(error_location)
 
-        print("ГДЕ:", error_location)
-        print("ОШИБКА", validations_error.message)
+        logger.info("%s %s", "ГДЕ:", error_location)
+        logger.info("%s %s", "ОШИБКА", validations_error.message)
 
     assert len(found_errors) == 2
     assert [1, "id"] in error_locations

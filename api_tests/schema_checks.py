@@ -6,9 +6,7 @@ def get_error_locations(users_to_check, expected_list_schema):
     schema_validator = Draft202012Validator(expected_list_schema)
 
     # Проверяем переданные данные и собираем найденные ошибки.
-    found_errors = list(
-        schema_validator.iter_errors(users_to_check)
-    )
+    found_errors = list(schema_validator.iter_errors(users_to_check))
 
     # Сюда будем добавлять адреса ошибок.
     error_locations = []

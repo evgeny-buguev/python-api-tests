@@ -1,17 +1,15 @@
 from playwright.sync_api import expect
+
+from settings import EXPANDTESTING_BASE_URL
+
+
 def test_email_inside_iframe(page):
     page.goto(
-        "https://practice.expandtesting.com/iframe",
+        f"{EXPANDTESTING_BASE_URL}/iframe",
         wait_until="domcontentloaded",
-        )
-    subcription_frame = page.frame_locator(
-        "#email-subscribe"
     )
-    email_field = subcription_frame.get_by_role(
-        "textbox"
-    )
+    subcription_frame = page.frame_locator("#email-subscribe")
+    email_field = subcription_frame.get_by_role("textbox")
     email_field.fill("student@example.com")
     # Проверяем значение поля.
-    expect(email_field).to_have_value(
-        "student@example.com"
-    )
+    expect(email_field).to_have_value("student@example.com")
